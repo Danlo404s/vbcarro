@@ -1,0 +1,262 @@
+<a href="#"
+   class="navbar-brand d-none d-md-flex align-items-center m-0 mr-4 p-0 aabtn"
+   title="Abrir ayuda rápida"
+   onclick="
+     event.preventDefault();
+     event.stopPropagation();
+
+     var box = document.getElementById('studyChatBox');
+
+     if (box.style.display === 'block') {
+       document.getElementById('studyQuestion').value = '';
+       document.getElementById('studyChatBox').style.display = 'none';
+       localStorage.setItem('studyChatClosed', 'yes');
+     } else {
+       box.style.display = 'block';
+       localStorage.setItem('studyChatClosed', 'no');
+
+       setTimeout(function () {
+         var input = document.getElementById('studyQuestion');
+         if (input) input.focus();
+       }, 80);
+     }
+
+     return false;
+   ">
+    <img src="https://raw.githubusercontent.com/Danlo404s/vbcarro/refs/heads/main/logo-192x192(1).png"
+         class="logo mr-1"
+         alt="EVAUG">
+</a>
+
+<style>
+  div[data-region="footer-container-popover"],
+  .footer-content-popover {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #studyChatBox, #studyChatBox * {
+    box-sizing: border-box !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  #studyChatBox {
+    display: none;
+    position: fixed !important;
+    right: 18px !important;
+    bottom: 78px !important;
+    width: 245px !important;
+    max-width: calc(100vw - 28px) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(203, 213, 225, 0.16) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    z-index: 999999 !important;
+    overflow: hidden !important;
+    opacity: 0.32 !important;
+    transition: opacity .18s, background .18s !important;
+  }
+
+  #studyChatBox:hover,
+  #studyChatBox:focus-within {
+    opacity: 0.55 !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: none !important;
+  }
+
+  #studyChatHeader {
+    height: 22px !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.12) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    padding: 0 5px !important;
+  }
+
+  #studyChatClose {
+    border: 1px solid rgba(203, 213, 225, 0.18) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(17, 24, 39, 0.35) !important;
+    border-radius: 6px !important;
+    width: 22px !important;
+    height: 18px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+  }
+
+  #studyChatBox:hover #studyChatClose {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: rgba(17, 24, 39, 0.55) !important;
+  }
+
+  #studyChatBody {
+    padding: 7px !important;
+    background: transparent !important;
+  }
+
+  #studyQuestion {
+    width: 100% !important;
+    height: 54px !important;
+    resize: vertical !important;
+    border: 1px solid rgba(203, 213, 225, 0.18) !important;
+    border-radius: 7px !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+    outline: none !important;
+    color: rgba(17, 24, 39, 0.45) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  #studyChatBox:hover #studyQuestion,
+  #studyQuestion:focus {
+    background: rgba(255, 255, 255, 0.28) !important;
+    color: rgba(17, 24, 39, 0.65) !important;
+    border-color: rgba(203, 213, 225, 0.32) !important;
+  }
+
+  #studyQuestion::placeholder {
+    color: rgba(17, 24, 39, 0.25) !important;
+  }
+
+  #studyChatButtons {
+    display: flex !important;
+    gap: 5px !important;
+    margin-top: 6px !important;
+  }
+
+  #studyChatSend,
+  #studyGoogleBtn {
+    flex: 1 !important;
+    border: 1px solid rgba(203, 213, 225, 0.16) !important;
+    border-radius: 7px !important;
+    height: 24px !important;
+    padding: 0 6px !important;
+    cursor: pointer !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(17, 24, 39, 0.32) !important;
+  }
+
+  #studyChatBox:hover #studyChatSend,
+  #studyChatBox:hover #studyGoogleBtn {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: rgba(17, 24, 39, 0.55) !important;
+  }
+</style>
+
+<div id="studyChatBox">
+  <div id="studyChatHeader">
+    <button id="studyChatClose"
+            type="button"
+            title="Minimizar"
+            onclick="
+              event.preventDefault();
+              document.getElementById('studyQuestion').value = '';
+              document.getElementById('studyChatBox').style.display = 'none';
+              localStorage.setItem('studyChatClosed', 'yes');
+              return false;
+            ">−</button>
+  </div>
+
+  <div id="studyChatBody">
+    <textarea id="studyQuestion" placeholder="Escribe..."></textarea>
+
+    <div id="studyChatButtons">
+      <button id="studyChatSend"
+              type="button"
+              onclick="
+                event.preventDefault();
+
+                var input = document.getElementById('studyQuestion');
+                var question = input.value.trim();
+
+                if (!question) {
+                  return false;
+                }
+
+                function abrirChat() {
+                  window.open(
+                    'https://chatgpt.com/',
+                    '_blank',
+                    'width=560,height=740,left=80,top=60,resizable=yes,scrollbars=yes,noopener,noreferrer'
+                  );
+                }
+
+                var temp = document.createElement('textarea');
+                temp.value = question;
+                temp.style.position = 'fixed';
+                temp.style.left = '-9999px';
+                document.body.appendChild(temp);
+                temp.focus();
+                temp.select();
+
+                try {
+                  document.execCommand('copy');
+                } catch (e) {}
+
+                document.body.removeChild(temp);
+                abrirChat();
+
+                document.getElementById('studyQuestion').value = '';
+                document.getElementById('studyChatBox').style.display = 'none';
+                localStorage.setItem('studyChatClosed', 'yes');
+
+                return false;
+              ">ChatGPT</button>
+
+      <button id="studyGoogleBtn"
+              type="button"
+              onclick="
+                event.preventDefault();
+
+                var input = document.getElementById('studyQuestion');
+                var question = input.value.trim();
+
+                if (!question) {
+                  return false;
+                }
+
+                window.open(
+                  'https://www.google.com/search?q=' + encodeURIComponent(question),
+                  '_blank',
+                  'width=780,height=740,left=120,top=60,resizable=yes,scrollbars=yes,noopener,noreferrer'
+                );
+
+                document.getElementById('studyQuestion').value = '';
+                document.getElementById('studyChatBox').style.display = 'none';
+                localStorage.setItem('studyChatClosed', 'yes');
+
+                return false;
+              ">Google</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  function mantenerMiniChat() {
+    var box = document.getElementById('studyChatBox');
+    if (!box) return;
+
+    var cerrado = localStorage.getItem('studyChatClosed');
+
+    if (cerrado !== 'yes') {
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mantenerMiniChat);
+  } else {
+    mantenerMiniChat();
+  }
+})();
+</script>
