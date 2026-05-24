@@ -2,12 +2,14 @@
   // ============================================
   // CHAT FLOTANTE INVISIBLE + GEMINI
   // Especificaciones:
-  // - El chat está totalmente invisible cuando no pasas el cursor encima.
-  // - Al pasar el cursor por encima, aparece con opacidad.
+  // - Totalmente invisible cuando no pasas el cursor encima.
+  // - Al pasar el cursor encima, aparece con opacidad.
   // - Botón ChatGPT: copia la pregunta y abre ChatGPT.
   // - Botón Google: busca la pregunta en Google y cierra el chat.
   // - Botón Gemini: envía la pregunta al Worker y muestra la respuesta.
-  // - Después de usar Gemini, el chat se cierra solo en 10 segundos.
+  // - Por defecto, Gemini cierra el chat después de 10 segundos.
+  // - Botón "Desactivar 10s": desactiva/activa el cierre automático de Gemini.
+  // - Botón "Borrar mensajes": limpia pregunta y respuesta.
   // - Atajo Ctrl + K: muestra/oculta el chat.
   // ============================================
 
@@ -18,6 +20,7 @@
   if (oldStyle) oldStyle.remove();
 
   var autoCloseTimer = null;
+  var autoCloseStorageKey = 'studyGeminiAutoCloseDisabled';
 
   var css = document.createElement('style');
   css.id = 'studyChatStyle';
@@ -28,12 +31,11 @@
   font-family:Arial!important;
 }
 
-/* Caja principal: totalmente invisible sin cursor */
 #studyChatBox{
   position:fixed!important;
   right:18px!important;
   bottom:78px!important;
-  width:295px!important;
+  width:350px!important;
   height:auto!important;
   background:transparent!important;
   border:1px solid transparent!important;
@@ -45,7 +47,6 @@
   transition:opacity .18s,background .18s!important;
 }
 
-/* Solo se ve cuando el cursor está encima */
 #studyChatBox:hover{
   opacity:.68!important;
   background:transparent!important;
@@ -53,13 +54,28 @@
 }
 
 #studyChatHeader{
-  height:22px!important;
+  height:24px!important;
   background:transparent!important;
   border-bottom:1px solid rgba(203,213,225,.06)!important;
   display:flex!important;
   justify-content:flex-end!important;
   align-items:center!important;
   padding:0 5px!important;
+  gap:5px!important;
+}
+
+#studyGeminiTimerToggle,
+#studyClearMessages{
+  border:1px solid rgba(203,213,225,.10)!important;
+  background:transparent!important;
+  color:rgba(17,24,39,.28)!important;
+  border-radius:6px!important;
+  height:18px!important;
+  padding:0 6px!important;
+  cursor:pointer!important;
+  font-size:9px!important;
+  font-weight:600!important;
+  white-space:nowrap!important;
 }
 
 #studyChatClose{
@@ -73,9 +89,25 @@
   font-size:13px!important;
 }
 
+#studyChatBox:hover #studyGeminiTimerToggle,
+#studyChatBox:hover #studyClearMessages,
 #studyChatBox:hover #studyChatClose{
   background:rgba(255,255,255,.10)!important;
-  color:rgba(17,24,39,.60)!important;
+  color:rgba(17,24,39,.65)!important;
+}
+
+#studyGeminiTimerToggle.off{
+  color:rgba(150,20,20,.70)!important;
+  border-color:rgba(150,20,20,.25)!important;
+}
+
+#studyGeminiTimerToggle.on{
+  color:rgba(20,90,40,.70)!important;
+  border-color:rgba(20,90,40,.25)!important;
+}
+
+#studyClearMessages{
+  color:rgba(80,80,80,.60)!important;
 }
 
 #studyChatBody{
@@ -107,7 +139,6 @@
   color:rgba(17,24,39,.22)!important;
 }
 
-/* Cuadro donde aparece la respuesta de Gemini */
 #studyAnswer{
   display:none!important;
   width:100%!important;
@@ -172,6 +203,8 @@
 
   box.innerHTML = `
 <div id="studyChatHeader">
+  <button id="studyGeminiTimerToggle" type="button">Desactivar 10s</button>
+  <button id="studyClearMessages" type="button">Borrar mensajes</button>
   <button id="studyChatClose" type="button">−</button>
 </div>
 
@@ -190,7 +223,27 @@
 
   document.body.appendChild(box);
 
-  // Cierra el chat y limpia el texto/respuesta.
+  function isAutoCloseDisabled() {
+    return localStorage.getItem(autoCloseStorageKey) === '1';
+  }
+
+  function updateTimerButton() {
+    var btn = document.getElementById('studyGeminiTimerToggle');
+    if (!btn) return;
+
+    if (isAutoCloseDisabled()) {
+      btn.textContent = 'Activar 10s';
+      btn.classList.remove('on');
+      btn.classList.add('off');
+      btn.title = 'El cuadro ya no se cerrará solo después de preguntar a Gemini';
+    } else {
+      btn.textContent = 'Desactivar 10s';
+      btn.classList.remove('off');
+      btn.classList.add('on');
+      btn.title = 'El cuadro se cerrará 10 segundos después de responder Gemini';
+    }
+  }
+
   function closeBox() {
     var q = document.getElementById('studyQuestion');
     if (q) q.value = '';
@@ -199,16 +252,39 @@
     box.style.display = 'none';
   }
 
-  // Cierra automáticamente después de 10 segundos.
+  function resetChat() {
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      autoCloseTimer = null;
+    }
+
+    var q = document.getElementById('studyQuestion');
+    if (q) {
+      q.value = '';
+      q.focus();
+    }
+
+    clearAnswer();
+
+    var geminiBtn = document.getElementById('studyGeminiBtn');
+    if (geminiBtn) {
+      geminiBtn.disabled = false;
+      geminiBtn.textContent = 'Gemini';
+    }
+  }
+
   function startAutoClose() {
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
+
+    if (isAutoCloseDisabled()) {
+      return;
+    }
 
     autoCloseTimer = setTimeout(function () {
       closeBox();
     }, 10000);
   }
 
-  // Se asegura de que exista el cuadro de respuesta.
   function ensureAnswerBox() {
     var ans = document.getElementById('studyAnswer');
 
@@ -229,7 +305,6 @@
     return ans;
   }
 
-  // Muestra una respuesta dentro del cuadro.
   function setAnswer(text) {
     var ans = ensureAnswerBox();
     if (!ans) return;
@@ -245,7 +320,6 @@
     ans.scrollTop = 0;
   }
 
-  // Oculta y limpia el cuadro de respuesta.
   function clearAnswer() {
     var ans = ensureAnswerBox();
     if (!ans) return;
@@ -254,13 +328,30 @@
     ans.style.setProperty('display', 'none', 'important');
   }
 
-  // Botón de cerrar.
+  document.getElementById('studyGeminiTimerToggle').onclick = function () {
+    if (isAutoCloseDisabled()) {
+      localStorage.removeItem(autoCloseStorageKey);
+    } else {
+      localStorage.setItem(autoCloseStorageKey, '1');
+
+      if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
+      }
+    }
+
+    updateTimerButton();
+  };
+
+  document.getElementById('studyClearMessages').onclick = function () {
+    resetChat();
+  };
+
   document.getElementById('studyChatClose').onclick = function () {
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
     closeBox();
   };
 
-  // Botón ChatGPT: copia el texto y abre ChatGPT.
   document.getElementById('studyChatSend').onclick = function () {
     var q = document.getElementById('studyQuestion').value.trim();
     if (!q) return;
@@ -289,7 +380,6 @@
     closeBox();
   };
 
-  // Botón Google: busca en Google y cierra.
   document.getElementById('studyGoogleBtn').onclick = function () {
     var q = document.getElementById('studyQuestion').value.trim();
     if (!q) return;
@@ -303,7 +393,6 @@
     closeBox();
   };
 
-  // Botón Gemini: manda la pregunta al Worker y muestra la respuesta.
   document.getElementById('studyGeminiBtn').onclick = async function () {
     var q = document.getElementById('studyQuestion').value.trim();
 
@@ -363,7 +452,6 @@
     }
   };
 
-  // Atajo Ctrl + K para mostrar u ocultar el chat.
   document.addEventListener(
     'keydown',
     function (e) {
@@ -391,7 +479,8 @@
     true
   );
 
-  // Enfoca el cuadro de texto al abrir.
+  updateTimerButton();
+
   setTimeout(function () {
     var input = document.getElementById('studyQuestion');
     if (input) input.focus();
