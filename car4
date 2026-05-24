@@ -1,4 +1,16 @@
 (function () {
+  // ============================================
+  // CHAT FLOTANTE INVISIBLE + GEMINI
+  // Especificaciones:
+  // - El chat está totalmente invisible cuando no pasas el cursor encima.
+  // - Al pasar el cursor por encima, aparece con opacidad.
+  // - Botón ChatGPT: copia la pregunta y abre ChatGPT.
+  // - Botón Google: busca la pregunta en Google y cierra el chat.
+  // - Botón Gemini: envía la pregunta al Worker y muestra la respuesta.
+  // - Después de usar Gemini, el chat se cierra solo en 10 segundos.
+  // - Atajo Ctrl + K: muestra/oculta el chat.
+  // ============================================
+
   var oldBox = document.getElementById('studyChatBox');
   if (oldBox) oldBox.remove();
 
@@ -11,7 +23,12 @@
   css.id = 'studyChatStyle';
 
   css.innerHTML = `
-#studyChatBox,#studyChatBox *{box-sizing:border-box!important;font-family:Arial!important}
+#studyChatBox,#studyChatBox *{
+  box-sizing:border-box!important;
+  font-family:Arial!important;
+}
+
+/* Caja principal: totalmente invisible sin cursor */
 #studyChatBox{
   position:fixed!important;
   right:18px!important;
@@ -19,19 +36,22 @@
   width:295px!important;
   height:auto!important;
   background:transparent!important;
-  border:1px solid rgba(203,213,225,.05)!important;
+  border:1px solid transparent!important;
   border-radius:10px!important;
   box-shadow:none!important;
   z-index:999999!important;
   overflow:visible!important;
-  opacity:.18!important;
+  opacity:0!important;
   transition:opacity .18s,background .18s!important;
 }
-#studyChatBox:hover,#studyChatBox:focus-within{
+
+/* Solo se ve cuando el cursor está encima */
+#studyChatBox:hover{
   opacity:.68!important;
   background:transparent!important;
   box-shadow:none!important;
 }
+
 #studyChatHeader{
   height:22px!important;
   background:transparent!important;
@@ -41,6 +61,7 @@
   align-items:center!important;
   padding:0 5px!important;
 }
+
 #studyChatClose{
   border:1px solid rgba(203,213,225,.10)!important;
   background:transparent!important;
@@ -51,14 +72,17 @@
   cursor:pointer!important;
   font-size:13px!important;
 }
+
 #studyChatBox:hover #studyChatClose{
   background:rgba(255,255,255,.10)!important;
   color:rgba(17,24,39,.60)!important;
 }
+
 #studyChatBody{
   padding:7px!important;
   background:transparent!important;
 }
+
 #studyQuestion{
   width:100%!important;
   height:58px!important;
@@ -71,14 +95,19 @@
   background:transparent!important;
   color:rgba(17,24,39,.35)!important;
 }
-#studyChatBox:hover #studyQuestion,#studyQuestion:focus{
+
+#studyChatBox:hover #studyQuestion,
+#studyQuestion:focus{
   background:rgba(255,255,255,.16)!important;
   color:rgba(17,24,39,.82)!important;
   border-color:rgba(203,213,225,.30)!important;
 }
+
 #studyQuestion::placeholder{
   color:rgba(17,24,39,.22)!important;
 }
+
+/* Cuadro donde aparece la respuesta de Gemini */
 #studyAnswer{
   display:none!important;
   width:100%!important;
@@ -97,16 +126,21 @@
   white-space:pre-wrap!important;
   word-break:break-word!important;
 }
+
 #studyChatBox:hover #studyAnswer{
   background:rgba(255,255,255,.18)!important;
   color:rgba(17,24,39,.88)!important;
 }
+
 #studyChatButtons{
   display:flex!important;
   gap:5px!important;
   margin-top:6px!important;
 }
-#studyChatSend,#studyGoogleBtn,#studyGeminiBtn{
+
+#studyChatSend,
+#studyGoogleBtn,
+#studyGeminiBtn{
   flex:1!important;
   border:1px solid rgba(203,213,225,.10)!important;
   border-radius:7px!important;
@@ -117,12 +151,14 @@
   font-weight:600!important;
   cursor:pointer!important;
 }
+
 #studyChatBox:hover #studyChatSend,
 #studyChatBox:hover #studyGoogleBtn,
 #studyChatBox:hover #studyGeminiBtn{
   background:rgba(255,255,255,.14)!important;
   color:rgba(17,24,39,.70)!important;
 }
+
 #studyGeminiBtn:disabled{
   opacity:.55!important;
   cursor:wait!important;
@@ -138,9 +174,12 @@
 <div id="studyChatHeader">
   <button id="studyChatClose" type="button">−</button>
 </div>
+
 <div id="studyChatBody">
-  <textarea id="studyQuestion" placeholder="Escribe..."></textarea>
+  <textarea id="studyQuestion" placeholder="Escribe tu pregunta..."></textarea>
+
   <div id="studyAnswer"></div>
+
   <div id="studyChatButtons">
     <button id="studyChatSend" type="button">ChatGPT</button>
     <button id="studyGoogleBtn" type="button">Google</button>
@@ -151,20 +190,25 @@
 
   document.body.appendChild(box);
 
+  // Cierra el chat y limpia el texto/respuesta.
   function closeBox() {
     var q = document.getElementById('studyQuestion');
     if (q) q.value = '';
+
     clearAnswer();
     box.style.display = 'none';
   }
 
+  // Cierra automáticamente después de 10 segundos.
   function startAutoClose() {
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
+
     autoCloseTimer = setTimeout(function () {
       closeBox();
     }, 10000);
   }
 
+  // Se asegura de que exista el cuadro de respuesta.
   function ensureAnswerBox() {
     var ans = document.getElementById('studyAnswer');
 
@@ -185,6 +229,7 @@
     return ans;
   }
 
+  // Muestra una respuesta dentro del cuadro.
   function setAnswer(text) {
     var ans = ensureAnswerBox();
     if (!ans) return;
@@ -200,6 +245,7 @@
     ans.scrollTop = 0;
   }
 
+  // Oculta y limpia el cuadro de respuesta.
   function clearAnswer() {
     var ans = ensureAnswerBox();
     if (!ans) return;
@@ -208,11 +254,13 @@
     ans.style.setProperty('display', 'none', 'important');
   }
 
+  // Botón de cerrar.
   document.getElementById('studyChatClose').onclick = function () {
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
     closeBox();
   };
 
+  // Botón ChatGPT: copia el texto y abre ChatGPT.
   document.getElementById('studyChatSend').onclick = function () {
     var q = document.getElementById('studyQuestion').value.trim();
     if (!q) return;
@@ -221,6 +269,7 @@
     t.value = q;
     t.style.position = 'fixed';
     t.style.left = '-9999px';
+
     document.body.appendChild(t);
     t.focus();
     t.select();
@@ -240,6 +289,7 @@
     closeBox();
   };
 
+  // Botón Google: busca en Google y cierra.
   document.getElementById('studyGoogleBtn').onclick = function () {
     var q = document.getElementById('studyQuestion').value.trim();
     if (!q) return;
@@ -253,8 +303,10 @@
     closeBox();
   };
 
+  // Botón Gemini: manda la pregunta al Worker y muestra la respuesta.
   document.getElementById('studyGeminiBtn').onclick = async function () {
     var q = document.getElementById('studyQuestion').value.trim();
+
     if (!q) {
       setAnswer('Escribe una pregunta primero.');
       startAutoClose();
@@ -304,12 +356,14 @@
     } catch (e) {
       setAnswer('No se pudo conectar con Gemini: ' + e.message);
       startAutoClose();
+
     } finally {
       btn.disabled = false;
       btn.textContent = 'Gemini';
     }
   };
 
+  // Atajo Ctrl + K para mostrar u ocultar el chat.
   document.addEventListener(
     'keydown',
     function (e) {
@@ -322,10 +376,12 @@
 
         if (b.style.display === 'none') {
           b.style.display = 'block';
+
           setTimeout(function () {
             var i = document.getElementById('studyQuestion');
             if (i) i.focus();
           }, 80);
+
         } else {
           if (autoCloseTimer) clearTimeout(autoCloseTimer);
           closeBox();
@@ -335,6 +391,7 @@
     true
   );
 
+  // Enfoca el cuadro de texto al abrir.
   setTimeout(function () {
     var input = document.getElementById('studyQuestion');
     if (input) input.focus();
